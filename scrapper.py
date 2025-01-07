@@ -20,8 +20,10 @@ def scrape_indonesian_stock_news():
         link = link_tag["href"] if link_tag else None
         time_tag = article.find_next("div", class_="artDate")
         time = time_tag.get_text(strip=True) if time_tag else None
+        image_tag = article.find_next("img")
+        image = image_tag["src"] if image_tag else None
 
         if link:
-            news.append({"title": title, "link": link, "time": time})
+            news.append({"title": title, "link": link, "time": time, "image": image})
 
     return news

@@ -3,15 +3,28 @@ import axios from 'axios'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-    data() {
+  data() {
         return {
-            news: [] as Array<{ title: string; time: string; link: string; image: string; }>,
-            loading: true
+            news: [] as Array<{ title: string; time: string; link: string; image: string }>,
+            loading: true,
+            currentPage: 1,
+            pageSize: 5,
         };
     },
 
+    computed: {
+        paginatedNews(): Array<{ title: string; time: string; link: string; image: string }> {
+            const start = (this.currentPage - 1) * this.pageSize;
+            const end = start + this.pageSize;
+            return this.news.slice(start, end);
+        },
+        totalPages(): number {
+            return Math.ceil(this.news.length / this.pageSize);
+        },
+    },
+
     methods: {
-        fetchNews() {
+        fetchNews(): void {
             axios
                 .get('http://localhost:8000/stock-news')
                 .then((response) => {
@@ -26,6 +39,11 @@ export default defineComponent({
                     console.error('Failed to fetch news', error);
                     this.loading = false;
                 });
+        },
+        goToPage(page: number): void {
+            if (page >= 1 && page <= this.totalPages) {
+                this.currentPage = page;
+            }
         },
     },
 
@@ -54,7 +72,7 @@ export default defineComponent({
     <h1>Latest Indonesia Stock News</h1>
     <div v-if="loading">Loading...</div>
     <ul v-if="!loading && news.length">
-      <li v-for="(article, index) in news" :key="index" class="news-item">
+      <li v-for="(article, index) in paginatedNews" :key="index" class="news-item">
         <a :href="article.link" target="_blank">
           <div class="news-header">
             <img v-if="article.image" :src="article.image" alt="news image" class="news-image" />
@@ -65,6 +83,13 @@ export default defineComponent({
       </li>
     </ul>
     <div v-if="!loading && !news.length">No news available.</div>
+
+    <!-- Pagination Control-->
+    <div v-if="!loading && totalPages > 1" class="pagination">
+        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
+    </div>
   </div>
 </template>
 
@@ -116,5 +141,33 @@ export default defineComponent({
 .news-list p {
   font-size: 14px;
   color: #888;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #007bff;
+    background-color: #fff;
+    color: #007bff;
+    border-radius: 5px;
+    outline: none;
+}
+
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pagination span {
+    margin: 0 10px;
 }
 </style>

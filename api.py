@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from scrapper import scrape_indonesian_stock_news
@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 @app.get("/stock-news")
-async def get_stock_news():
+async def get_stock_news(limit: int = Query(10, get=1)):
     try:
         news = scrape_indonesian_stock_news()
         if "error" in news:

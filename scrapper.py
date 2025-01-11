@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-def scrape_indonesian_stock_news():
+def scrape_indonesian_stock_news(limit=None):
     url = "https://market.bisnis.com/bursa-saham"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36"
@@ -14,7 +14,7 @@ def scrape_indonesian_stock_news():
     articles = soup.find_all("h4", class_="artTitle")
     news = []
 
-    for article in articles:
+    for article in articles[:limit]:
         title = article.get_text(strip=True)
         link_tag = article.find_parent("a")
         link = link_tag["href"] if link_tag else None

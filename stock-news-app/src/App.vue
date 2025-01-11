@@ -1,26 +1,25 @@
-<script setup lang="ts">
-import { defineComponent } from 'vue';
-import StockNews from './components/StockNews.vue';
-
-defineComponent({
-  name: 'App',
-  components: {
-    StockNews,
-  },
-});
-
-</script>
-
 <template>
   <div id="app">
-    <StockNews />
+    <nav>
+      <router-link :to="'/'">Home</router-link>
+      <router-link to="/about">About</router-link>
+    </nav>
+    <router-view />
   </div>
 </template>
 
 <style scoped>
-#app {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin-top: 20px;
+nav {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+nav a {
+  text-decoration: none;
+  color: #007bff;
+}
+nav a.router-link-active {
+  font-weight: bold;
+  color: #0056b3;
 }
 </style>

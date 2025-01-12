@@ -1,11 +1,19 @@
+<script lang="ts">
+  import HeaderApp from './components/HeaderApp.vue'
+  import { defineComponent } from "vue";
+  export default defineComponent({
+  name: "App",
+  components: {
+    HeaderApp,
+  },
+});
+</script>
+
 <template>
   <div id="app">
-    <nav>
-      <router-link :to="'/'">Home</router-link>
-      <router-link to="/about">About</router-link>
-    </nav>
-    <router-view />
+    <HeaderApp/>
   </div>
+  <router-view />
 </template>
 
 <style scoped>

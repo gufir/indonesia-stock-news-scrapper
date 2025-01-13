@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from scrapper import scrape_indonesian_stock_news
+from scrapper import scrape_indonesian_stock_news, scrape_tech_news
 import uvicorn
 import contextlib
 import threading
@@ -23,6 +23,16 @@ app.add_middleware(
 async def get_stock_news(limit: int = Query(10, get=1)):
     try:
         news = scrape_indonesian_stock_news()
+        if "error" in news:
+            return JSONResponse(content=news, status_code=500)
+        return {"status": "success", "data": news}
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+    
+@app.get("/tech-news")
+async def get_tech_news(limit: int = Query(10, get=1)):
+    try:
+        news = scrape_tech_news()
         if "error" in news:
             return JSONResponse(content=news, status_code=500)
         return {"status": "success", "data": news}

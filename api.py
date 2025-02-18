@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from scrapper import scrape_indonesian_stock_news, scrape_tech_news
+from scrapper import scrape_indonesian_stock_news, scrape_tech_news, scrape_stock_news
+from scrapers import ScraperFactory
 import uvicorn
 import contextlib
 import threading
@@ -38,6 +39,14 @@ async def get_tech_news(limit: int = Query(10, get=1)):
         return {"status": "success", "data": news}
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+    
+@app.get("/scraper/{source}")
+def scrape(source: str):
+    scraper = ScraperFactory.get_scraper(source)
+    if scraper:
+        news = scraper.scrape_news(limit=5)
+        return news
+    return {"error": "Invalid source"}
 
 class Server(uvicorn.Server):
     def install_signal_handlers(self) -> None:
@@ -53,6 +62,8 @@ class Server(uvicorn.Server):
         finally:
             self.should_exit = True
             thread.join()
+
+
 
 config = uvicorn.Config(app = app, host=host, port=portAPI, log_level="info")
 server = Server(config=config)

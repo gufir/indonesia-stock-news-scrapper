@@ -40,7 +40,6 @@ def scrape_tech_news(limit=None):
 
     soup = BeautifulSoup(response.content, "html.parser")
     
-    # Modify the selectors to match the current structure of the BBC innovation technology page
     articles = soup.find_all("h2", class_="sc-8ea7699c-3 dhclWg")  # Adjust class name as needed
     news = []
 
@@ -58,4 +57,31 @@ def scrape_tech_news(limit=None):
 
 
     return news
+
+def scrape_stock_news(limit=None):
+    url = 'https://investasi.kontan.co.id/'
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        return {"error":f"failed to fetch data. Status code: {response.status_code}"}
+    
+    soup = BeautifulSoup(response.content, "html.parser")
+    articles = soup.find_all("div", class_="ket")
+    news = []
+    
+    for article in articles[:limit]:
+        title_tag = article.find("h1")
+        title = title_tag.get_text(strip=True) if title_tag else None
+        link_tag = title_tag.find("a") if title_tag else None
+        link = link_tag["href"] if link_tag else None
+        time_tag = article.find("span", class_="font-gray")
+        time = time_tag.get_text(strip=True) if time_tag else None
+
+        if title and link:
+            news.append({"title": title, "link": link, "time": time})
+    
+    return news
+
 

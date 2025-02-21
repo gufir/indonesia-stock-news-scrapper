@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import psycopg2
 import os
 from abc import ABC, abstractmethod
+import uuid
 
 class NewsScraper(ABC):
     @abstractmethod
@@ -17,16 +18,20 @@ class NewsScraper(ABC):
             host=os.getenv("DB_HOST"),
             port=os.getenv("DB_PORT")
         )
+
+        if not conn:
+            return {"error": "Failed to connect to database"}
+        
         cursor = conn.cursor()
         
         for article in news:
             cursor.execute(
                 """
-                INSERT INTO stock_news (title, link, published_date, source)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO stock_news (id, title, link, published_date, source)
+                VALUES (%s,%s, %s, %s, %s)
                 ON CONFLICT (link) DO NOTHING;
                 """,
-                (article["title"], article["link"], article["time"], source)
+                (article["id"], article["title"], article["link"], article["time"], source)
             )
         
         conn.commit()
@@ -51,10 +56,13 @@ class BisnisScraper(NewsScraper):
             link = link_tag["href"] if link_tag else None
             time_tag = article.find_next("div", class_="artDate")
             time = time_tag.get_text(strip=True) if time_tag else None
+            id = str(uuid.uuid4())
             
             if link:
-                news.append({"title": title, "link": link, "time": time})
+                news.append({"id":id, "title": title, "link": link, "time": time})
         
+        print(news)
+
         self.save_to_db(news, "Bisnis Indonesia")
         return news
 
@@ -77,10 +85,13 @@ class KontanScraper(NewsScraper):
             link = link_tag["href"] if link_tag else None
             time_tag = article.find("span", class_="font-gray")
             time = time_tag.get_text(strip=True) if time_tag else None
+            id = str(uuid.uuid4())
             
             if title and link:
-                news.append({"title": title, "link": link, "time": time})
+                news.append({"id":id, "title": title, "link": link, "time": time})
         
+
+        print(news)
         self.save_to_db(news, "Kontan")
         return news
 

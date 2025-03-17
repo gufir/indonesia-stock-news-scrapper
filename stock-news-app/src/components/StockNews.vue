@@ -1,69 +1,77 @@
 <script lang="ts">
-import axios from 'axios'
-import { defineComponent } from 'vue'
+import axios from 'axios';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   data() {
-        return {
-            news: [] as Array<{ title: string; time: string; link: string; image: string }>,
-            loading: true,
-            currentPage: 1,
-            pageSize: 5,
-        };
-    },
+    return {
+      news: [] as Array<{ title: string; time: string; link: string; image: string }>,
+      loading: true,
+      currentPage: 1,
+      pageSize: 5,
+    };
+  },
 
-    computed: {
-        paginatedNews(): Array<{ title: string; time: string; link: string; image: string }> {
-            const start = (this.currentPage - 1) * this.pageSize;
-            const end = start + this.pageSize;
-            return this.news.slice(start, end);
-        },
-        totalPages(): number {
-            return Math.ceil(this.news.length / this.pageSize);
-        },
+  computed: {
+    paginatedNews(): Array<{ title: string; time: string; link: string; image: string }> {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.news.slice(start, end);
     },
-
-    methods: {
-        fetchNews(): void {
-            axios
-                .get('http://localhost:8000/stock-news')
-                .then((response) => {
-                    if (response.data.status === 'success') {
-                        this.news = response.data.data;
-                    } else {
-                        console.error('Failed to fetch news');
-                    }
-                    this.loading = false;
-                })
-                .catch((error) => {
-                    console.error('Failed to fetch news', error);
-                    this.loading = false;
-                });
-        },
-        goToPage(page: number): void {
-            if (page >= 1 && page <= this.totalPages) {
-                this.currentPage = page;
-            }
-        },
+    totalPages(): number {
+      return Math.ceil(this.news.length / this.pageSize);
     },
+  },
 
-    watch: {
-        news: {
-            handler(newNews) {
-                if (newNews.length) {
-                    console.log('Stock news updated:', newNews);
-                }
-            },
-            deep: true
+  methods: {
+    async fetchNews() {
+      this.loading = true;
+      try {
+        const [kontanResponse, bisnisResponse] = await Promise.all([
+          axios.get('http://localhost:8000/scraper/kontan'),
+          axios.get('http://localhost:8000/scraper/bisnis')
+        ]);
+
+        let combinedNews = [...kontanResponse.data, ...bisnisResponse.data];
+        combinedNews = combinedNews
+          .map(article => ({
+            ...article,
+            time: new Date(article.time) // Konversi string ke Date
+          }))
+          .sort((a, b) => b.time.getTime() - a.time.getTime()); // Urutkan dari terbaru
+
+        this.news = combinedNews;
+      } catch (error) {
+        console.error('Failed to fetch news', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    goToPage(page: number): void {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    },
+  },
+
+  watch: {
+    news: {
+      handler(newNews) {
+        if (newNews.length) {
+          console.log('Stock news updated:', newNews);
         }
-    },
+      },
+      deep: true
+    }
+  },
 
-    mounted() {
-        this.fetchNews();
-        setInterval(() => {
-            this.fetchNews();
-        }, 30000);
-    },
+  mounted() {
+    this.fetchNews();
+    setInterval(() => {
+      this.fetchNews();
+    }, 300000);
+  },
 });
 </script>
 

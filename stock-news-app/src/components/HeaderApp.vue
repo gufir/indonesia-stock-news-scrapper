@@ -3,7 +3,8 @@
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
           <!-- Navbar Brand -->
-          <router-link class="navbar-brand" to="/">News App</router-link>
+          <router-link class="navbar-brand" to="/">
+            News App</router-link>
           <button
             class="navbar-toggler"
             type="button"
@@ -137,4 +138,11 @@
     color: #ffc107; /* Golden color for the active link */
     font-weight: bold;
   }
+
+  .icon {
+  width: 32px;  /* Ubah ukuran */
+  height: 32px;
+  margin-right: 8px;
+
+}
   </style>

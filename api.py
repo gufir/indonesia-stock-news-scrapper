@@ -44,7 +44,7 @@ async def get_tech_news(limit: int = Query(10, get=1)):
 def scrape(source: str):
     scraper = ScraperFactory.get_scraper(source)
     if scraper:
-        news = scraper.scrape_news(limit=5)
+        news = scraper.scrape_news(limit=10)
         return news
     return {"error": "Invalid source"}
 

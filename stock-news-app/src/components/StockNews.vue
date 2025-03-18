@@ -28,17 +28,17 @@ export default defineComponent({
       this.loading = true;
       try {
         const [kontanResponse, bisnisResponse] = await Promise.all([
-          axios.get('http://localhost:8000/scraper/kontan'),
-          axios.get('http://localhost:8000/scraper/bisnis')
+          axios.get('http://localhost:8000/stock/kontan'),
+          axios.get('http://localhost:8000/stock/bisnis')
         ]);
 
         let combinedNews = [...kontanResponse.data, ...bisnisResponse.data];
         combinedNews = combinedNews
           .map(article => ({
             ...article,
-            time: new Date(article.time) // Konversi string ke Date
+            time: new Date(article.time)
           }))
-          .sort((a, b) => b.time.getTime() - a.time.getTime()); // Urutkan dari terbaru
+          .sort((a, b) => b.time.getTime() - a.time.getTime());
 
         this.news = combinedNews;
       } catch (error) {

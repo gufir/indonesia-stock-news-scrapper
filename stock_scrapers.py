@@ -4,7 +4,7 @@ import psycopg2
 import os
 from abc import ABC, abstractmethod
 import uuid
-from converter_time import parse_time, parse_relative_time, parse_absolute_time, parse_kontan_time
+from converter_time import parse_time, parse_kontan_time
 
 class NewsScraper(ABC):
     @abstractmethod
@@ -66,6 +66,7 @@ class BisnisScraper(NewsScraper):
                 news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
         
         print(news)
+        self.save_to_db(news, "bisnis")
         return news
 
 class KontanScraper(NewsScraper):
@@ -81,11 +82,11 @@ class KontanScraper(NewsScraper):
         articles = soup.find_all("div", class_="ket")
         images = soup.find_all("div", class_="pic")
 
-        print(f"Found {len(articles)} articles")  # Debugging
+        print(f"Found {len(articles)} articles")
         
         news = []
         
-        for idx, article in enumerate(articles[:limit or len(articles)]):  # ✅ Fix unpacking
+        for idx, article in enumerate(articles[:limit or len(articles)]):
             title_tag = article.find("h1")
             title = title_tag.get_text(strip=True) if title_tag else None
             link_tag = title_tag.find("a") if title_tag else None
@@ -105,13 +106,47 @@ class KontanScraper(NewsScraper):
                 news.append({"id": id, "title": title, "link": link, "time": time, "image": image_url})
 
         print(news)
+        self.save_to_db(news, "kontan")
         return news
+    
+class BloombergScraper(NewsScraper):
+    def scrape_news(self, limit=None):
+        url = 'https://www.bloombergtechnoz.com/kanal/market/pasar-modal/'
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {"error": f"Failed to fetch data. Status code: {response.status_code}"}
+        
+        soup = BeautifulSoup(response.content, "html.parser")
+        articles = soup.find_all("div", class_="card-box ft150 margin-bottom-xl")
+        news = []
+
+        for article in articles[:limit or len(articles)]:
+            link_tag = article.find("a")
+            link = link_tag["href"] if link_tag else None
+            image_tag = article.find("img")
+            image = image_tag["src"] if image_tag else None
+            title_tag = article.find("h2", class_="title margin-bottom-xs")
+            title = title_tag.get_text(strip=True) if title_tag else None
+            time_tag = article.find("h6", class_="title fw4 cl-blue")
+            time = time_tag.get_text(strip=True) if time_tag else None
+            time = parse_time(time) if time else None
+            id = str(uuid.uuid4())
+            
+            if link:
+                news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
+        
+        print(news)
+        self.save_to_db(news, "bloomberg")
+        return news
+    
 
 class ScraperFactory:
     @staticmethod
     def get_scraper(source):
         scrapers = {
             "bisnis": BisnisScraper(),
-            "kontan": KontanScraper()
+            "kontan": KontanScraper(),
+            "bloomberg": BloombergScraper()
         }
         return scrapers.get(source)

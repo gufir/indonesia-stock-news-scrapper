@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from scrapper import scrape_indonesian_stock_news, scrape_tech_news, scrape_stock_news
+from scrapper import scrape_indonesian_stock_news, scrape_tech_news
 from stock_scrapers import ScraperFactory
 import uvicorn
 import contextlib
 import threading
 import time
+import psycopg2
+import os
 
 app = FastAPI()
 host = "0.0.0.0"
@@ -20,10 +22,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/stock-news")
-async def get_stock_news(limit: int = Query(10, get=1)):
+def fetch_stock_news(limit: int):
     try:
-        news = scrape_indonesian_stock_news()
+        conn = psycopg2.connect(
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT")
+        )
+        cursor = conn.cursor()
+
+        query = """
+        SELECT id, title, link, published_date, source
+        FROM stock_news
+        ORDER BY published_date DESC
+        AND deleted_at IS NULL
+        LIMIT %s;
+        """
+        cursor.execute(query, (limit,))
+        news = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return [
+            {"id": row[0], "title": row[1], "link": row[2], "published_date": row[3], "source": row[4]}
+            for row in news
+        ]
+    
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/stock-news")
+async def get_stock_news(
+    limit: int = Query(50, ge=1, le=1000)):
+    try:
+        news = fetch_stock_news(limit)
         if "error" in news:
             return JSONResponse(content=news, status_code=500)
         return {"status": "success", "data": news}
@@ -31,7 +66,7 @@ async def get_stock_news(limit: int = Query(10, get=1)):
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
     
 @app.get("/tech-news")
-async def get_tech_news(limit: int = Query(10, get=1)):
+async def get_tech_news(limit: int = Query(10, ge=1)):
     try:
         news = scrape_tech_news()
         if "error" in news:

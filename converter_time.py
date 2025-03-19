@@ -6,6 +6,9 @@ def parse_time(time_str):
     """
     Konversi format waktu yang berbeda ke format datetime.
     """
+    if "|" in time_str:
+        time_str = time_str.split("|")[1].strip()
+        
     if "yang lalu" in time_str:
         return parse_relative_time(time_str)
     else:
@@ -31,7 +34,7 @@ def parse_relative_time(relative_str):
         elif unit == "hari":
             return now - timedelta(days=value)
 
-    return now  # Jika parsing gagal, gunakan waktu sekarang
+    return now
 
 def parse_absolute_time(absolute_str):
     """
@@ -40,17 +43,16 @@ def parse_absolute_time(absolute_str):
     try:
         parts = absolute_str.split("/")
         if len(parts) == 2:
-            date_part = parts[0].split(", ")[1].strip()  # "17 Maret 2025"
-            time_part = parts[1].split(" WIB")[0].strip()  # "14:02"
+            date_part = parts[0].split(", ")[1].strip() 
+            time_part = parts[1].split(" WIB")[0].strip() 
 
-            # Format: "17 Maret 2025 14:02"
             formatted_date = datetime.strptime(f"{date_part} {time_part}", "%d %B %Y %H:%M")
 
             return formatted_date
     except Exception as e:
         print(f"Error parsing absolute time: {e}")
 
-    return datetime.now()  # Jika parsing gagal, gunakan waktu sekarang
+    return datetime.now() 
 
 
 locale.setlocale(locale.LC_TIME, "id_ID.utf8")
@@ -60,21 +62,16 @@ def parse_kontan_time(kontan_time_str):
     Konversi format Kontan: "| Senin, 17 Maret 2025 / 14:21 WIB" → datetime
     """
     try:
-        # Hapus simbol "|" di awal jika ada
         if "|" in kontan_time_str:
             kontan_time_str = kontan_time_str.split("|")[1].strip()
         
-        # Pisahkan tanggal dan waktu
         date_part, time_part = kontan_time_str.split(" / ")
         
-        # Hapus nama hari (Senin, Selasa, dll.)
         date_part = date_part.split(", ")[1]
 
-        # Gabungkan ke format yang bisa diparsing
         formatted_datetime_str = f"{date_part} {time_part}".replace(" WIB", "")
 
-        # Parse ke objek datetime
         return datetime.strptime(formatted_datetime_str, "%d %B %Y %H:%M")
     except Exception as e:
         print(f"Error parsing Kontan time: {e}")
-        return datetime.now()  # Gunakan waktu sekarang jika parsing gagal
+        return datetime.now()

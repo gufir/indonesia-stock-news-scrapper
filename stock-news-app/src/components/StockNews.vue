@@ -27,13 +27,14 @@ export default defineComponent({
     async fetchNews() {
       this.loading = true;
       try {
-        const [kontanResponse, bisnisResponse, bloombergResponse] = await Promise.all([
+        const [kontanResponse, bisnisResponse, bloombergResponse, idnfinanceResponse] = await Promise.all([
           axios.get('http://localhost:8000/stock/kontan'),
           axios.get('http://localhost:8000/stock/bisnis'),
           axios.get('http://localhost:8000/stock/bloomberg'),
+          axios.get('http://localhost:8000/stock/idnfinance')
         ]);
 
-        let combinedNews = [...kontanResponse.data, ...bisnisResponse.data, ...bloombergResponse.data];
+        let combinedNews = [...kontanResponse.data, ...bisnisResponse.data, ...bloombergResponse.data, ...idnfinanceResponse.data];
         combinedNews = combinedNews
           .map(article => ({
             ...article,

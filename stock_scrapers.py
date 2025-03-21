@@ -4,7 +4,7 @@ import psycopg2
 import os
 from abc import ABC, abstractmethod
 import uuid
-from converter_time import parse_time, parse_kontan_time
+from converter_time import parse_time, parse_kontan_time, parse_absolute_time, parse_relative_time
 
 class NewsScraper(ABC):
     @abstractmethod
@@ -66,7 +66,7 @@ class BisnisScraper(NewsScraper):
                 news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
         
         print(news)
-        self.save_to_db(news, "bisnis")
+        # self.save_to_db(news, "bisnis")
         return news
 
 class KontanScraper(NewsScraper):
@@ -106,7 +106,7 @@ class KontanScraper(NewsScraper):
                 news.append({"id": id, "title": title, "link": link, "time": time, "image": image_url})
 
         print(news)
-        self.save_to_db(news, "kontan")
+        # self.save_to_db(news, "kontan")
         return news
     
 class BloombergScraper(NewsScraper):
@@ -137,9 +137,41 @@ class BloombergScraper(NewsScraper):
                 news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
         
         print(news)
-        self.save_to_db(news, "bloomberg")
+        # self.save_to_db(news, "bloomberg")
         return news
     
+
+class IDNFinanceScraper(NewsScraper):
+    def scrape_news(self, limit=None):
+        url = 'https://www.idnfinancials.com/id/news'
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {"error": f"Failed to fetch data. Status code: {response.status_code}"}
+        
+        soup = BeautifulSoup(response.content, "html.parser")
+        articles = soup.find_all("article", class_="item article")
+        news = []
+
+        for article in articles[:limit or len(articles)]:
+            link_tag = article.find("a", class_="ab")
+            link = link_tag["href"] if link_tag else None
+            image_tag = article.find("img")
+            image = image_tag["src"] if image_tag else None
+            title_tag = article.find("h2", class_="title")
+            title = title_tag.get_text(strip=True) if title_tag else None
+            time_tag = article.find("p", class_="date-published")
+            time = time_tag["data-date"] if time_tag else None
+            time = parse_absolute_time(time) if time else None
+            
+            id = str(uuid.uuid4())
+            
+            if link:
+                news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
+        
+        print(news)
+        # self.save_to_db(news, "idnfinance")
+        return news
 
 class ScraperFactory:
     @staticmethod
@@ -147,6 +179,7 @@ class ScraperFactory:
         scrapers = {
             "bisnis": BisnisScraper(),
             "kontan": KontanScraper(),
-            "bloomberg": BloombergScraper()
+            "bloomberg": BloombergScraper(),
+            "idnfinance": IDNFinanceScraper()
         }
         return scrapers.get(source)

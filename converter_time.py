@@ -41,6 +41,9 @@ def parse_absolute_time(absolute_str):
     Konversi waktu absolut (misal: 'Senin, 17 Maret 2025 / 14:02 WIB') ke datetime.
     """
     try:
+        if re.match(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", absolute_str):
+            return datetime.strptime(absolute_str, "%Y-%m-%d %H:%M:%S")
+        
         parts = absolute_str.split("/")
         if len(parts) == 2:
             date_part = parts[0].split(", ")[1].strip() 

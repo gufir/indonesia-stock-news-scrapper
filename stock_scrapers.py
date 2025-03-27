@@ -173,6 +173,39 @@ class IDNFinanceScraper(NewsScraper):
         # self.save_to_db(news, "idnfinance")
         return news
 
+class CNBCScraper(NewsScraper):
+    def scrape_news(self, limit=None):
+        url = 'https://www.cnbcindonesia.com/tag/saham'
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {"error": f"Failed to fetch data. Status code: {response.status_code}"}
+        
+        soup = BeautifulSoup(response.content, "html.parser")
+        articles = soup.find_all("div", class_="nhl-list flex flex-col gap-6")
+        news = []
+
+        for article in articles[:limit or len(articles)]:
+            link_tag = article.find("a")
+            link = link_tag["href"] if link_tag else None
+            image_tag = article.find("img")
+            image = image_tag["src"] if image_tag else None
+            title_tag = article.find("h2", class_="font-semibold text-23 group-hover:text-cnbc-primary-blue")
+            title = title_tag.get_text(strip=True) if title_tag else None
+            time_tag = article.find("span", class_="text-xs text-gray")
+            time = time_tag.get_text(strip=True) if time_tag else None
+            time = parse_time(time) if time else None
+
+            
+            id = str(uuid.uuid4())
+            
+            if link:
+                news.append({"id": id, "title": title, "link": link, "time": time, "image": image})
+        
+        print(news)
+        # self.save_to_db(news, "cnbc")
+        return news
+
 class ScraperFactory:
     @staticmethod
     def get_scraper(source):
@@ -180,6 +213,7 @@ class ScraperFactory:
             "bisnis": BisnisScraper(),
             "kontan": KontanScraper(),
             "bloomberg": BloombergScraper(),
-            "idnfinance": IDNFinanceScraper()
+            "idnfinance": IDNFinanceScraper(),
+            "cnbc": CNBCScraper(),
         }
         return scrapers.get(source)
